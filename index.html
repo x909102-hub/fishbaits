@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FishBaits</title>
+
+<style>
+body{margin:0;font-family:Arial;background:#0b1d26;color:#e6f7ff}
+header{padding:15px;text-align:center;background:#02141f;color:#00e0ff}
+.container{padding:15px}
+
+.top-bar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:15px}
+input,select{padding:8px;border-radius:5px;border:none}
+
+.products{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.product{background:#102a36;border-radius:8px;overflow:hidden;transition:.2s;font-size:14px}
+.product:hover{transform:scale(1.04)}
+.product img{width:100%;height:120px;object-fit:cover}
+.product-content{padding:8px}
+
+.btn{background:#00e0ff;color:black;padding:6px;margin-top:5px;display:inline-block;cursor:pointer;border-radius:5px;font-size:12px}
+
+.cart-btn{position:fixed;bottom:20px;right:20px;background:#00e0ff;color:black;padding:12px 15px;border-radius:50px;cursor:pointer;font-weight:bold}
+
+.cart{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:300px;max-height:80%;background:#02141f;padding:15px;border-radius:10px;overflow:auto;transition:.3s}
+.cart.active{transform:translate(-50%,-50%) scale(1)}
+
+.cart-item{border-bottom:1px solid #00e0ff;padding:5px 0}
+.remove{color:red;cursor:pointer}
+
+.checkout{margin-top:10px;background:#00ff9d;color:black;padding:10px;text-align:center;cursor:pointer}
+
+.overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:none}
+.overlay.active{display:block}
+</style>
+</head>
+<body>
+
+<header>
+<h1>FishBaits — Топ приманки 🎣</h1>
+</header>
+
+<div class="container">
+
+<div class="top-bar">
+<input id="search" placeholder="Пошук..." oninput="renderProducts()">
+<select id="fishFilter" onchange="renderProducts()">
+<option value="all">Всі риби</option>
+<option value="щука">Щука</option>
+<option value="окунь">Окунь</option>
+<option value="судак">Судак</option>
+</select>
+<select id="priceFilter" onchange="renderProducts()">
+<option value="all">Будь-яка ціна</option>
+<option value="low">До 55 грн</option>
+<option value="high">55+ грн</option>
+</select>
+</div>
+
+<div class="products" id="products"></div>
+
+</div>
+
+<div class="cart-btn" onclick="toggleCart()">🛒 <span id="cart-count">0</span></div>
+
+<div class="overlay" id="overlay" onclick="toggleCart()"></div>
+
+<div class="cart" id="cart">
+<h3>🛒 Корзина</h3>
+<div id="cart-items"></div>
+<h4 id="total">0 грн</h4>
+<div class="checkout" onclick="checkout()">Замовити</div>
+</div>
+
+<script>
+const products=[
+{name:'Силікон FishBaits 7см (щука)',price:55,type:'щука',img:'https://via.placeholder.com/300'},
+{name:'Мікроджиг FishBaits 4см (окунь)',price:50,type:'окунь',img:'https://via.placeholder.com/300'},
+{name:'Zander FishBaits 8см (судак)',price:60,type:'судак',img:'https://via.placeholder.com/300'}
+];
+
+let cart=JSON.parse(localStorage.getItem('cart'))||[];
+
+function renderProducts(){
+const search=document.getElementById('search').value.toLowerCase();
+const fish=document.getElementById('fishFilter').value;
+const price=document.getElementById('priceFilter').value;
+
+const container=document.getElementById('products');
+container.innerHTML='';
+
+products.filter(p=>{
+return p.name.toLowerCase().includes(search) &&
+(fish==='all'||p.type===fish)&&
+(price==='all'||(price==='low'?p.price<=55:p.price>55));
+}).forEach(p=>{
+container.innerHTML+=`<div class="product">
+<img src="${p.img}">
+<div class="product-content">
+<h4>${p.name}</h4>
+<p>${p.price} грн</p>
+<div class="btn" onclick="addToCart('${p.name}',${p.price})">В корзину</div>
+</div>
+</div>`;
+});
+}
+
+function addToCart(name,price){
+const existing=cart.find(i=>i.name===name);
+if(existing){existing.qty+=1}else{cart.push({name,price,qty:1})}
+localStorage.setItem('cart',JSON.stringify(cart));
+renderCart();
+}
+
+function removeFromCart(i){
+cart.splice(i,1);
+localStorage.setItem('cart',JSON.stringify(cart));
+renderCart();
+}
+
+function renderCart(){
+const el=document.getElementById('cart-items');
+el.innerHTML='';
+let total=0;
+let count=0;
+
+cart.forEach((item,i)=>{
+const qty=item.qty||1;
+total+=item.price*qty;
+count+=qty;
+el.innerHTML+=`<div class="cart-item">${item.name} x${qty} — ${item.price*qty} грн <span class="remove" onclick="removeFromCart(${i})">❌</span></div>`;
+});
+
+document.getElementById('total').innerText=total+' грн';
+document.getElementById('cart-count').innerText=count;
+}
+
+function toggleCart(){
+document.getElementById('cart').classList.toggle('active');
+document.getElementById('overlay').classList.toggle('active');
+}
+
+function checkout(){
+let text='Замовлення:%0A';
+cart.forEach(i=>text+=i.name+' '+(i.price*(i.qty||1))+' грн%0A');
+window.open('https://t.me/USERNAME234562?text='+text,'_blank');
+}
+
+renderProducts();
+renderCart();
+</script>
+
+</body>
+</html>
